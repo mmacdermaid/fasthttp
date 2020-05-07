@@ -183,6 +183,8 @@ type Server struct {
 	// like they are normal requests
 	ContinueHandler func(header *RequestHeader) bool
 
+	ConnTimeHandler func(start time.Time)
+
 	// Server name for sending in response headers.
 	//
 	// Default server name is used if left blank.
@@ -1950,6 +1952,7 @@ func (s *Server) serveConn(c net.Conn) (err error) {
 		continueReadingRequest bool = true
 	)
 	for {
+		start := time.Now()
 		connRequestNum++
 
 		// If this is a keep-alive connection set the idle timeout.
@@ -2224,6 +2227,9 @@ func (s *Server) serveConn(c net.Conn) (err error) {
 			break
 		}
 
+		if s.ConnTimeHandler != nil {
+			s.ConnTimeHandler(start)
+		}
 		s.setState(c, StateIdle)
 
 		if atomic.LoadInt32(&s.stop) == 1 {
